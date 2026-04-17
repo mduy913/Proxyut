@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>CLEAN SHOP V122</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        :root { --bg: #0b0b12; --cyan: #00f2ff; --gold: #ffcc00; --card: #1a1a2e; --red: #ff4444; --vip: #ff00ff; --green: #00ff88; --adm: #bc13fe; }
+        body { background: var(--bg); color: white; font-family: sans-serif; padding: 10px; margin: 0; }
+        .box { background: var(--card); padding: 15px; border-radius: 10px; border: 1px solid #2a2a40; margin-bottom: 12px; }
+        input, textarea, select { width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #333; background: #000; color: #fff; box-sizing: border-box; outline: none; }
+        button { border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; text-transform: uppercase; font-size: 11px; }
+        .btn-main { background: var(--cyan); color: #000; width: 100%; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .adm-sec { border: 2px solid var(--adm); padding: 12px; border-radius: 10px; display: none; background: #0d001a; margin-bottom: 15px; }
+        .tab-btn { background: #222; color: #888; margin-right: 5px; padding: 5px 10px; }
+        .tab-active { background: var(--adm)!important; color: #fff!important; }
+        table { width:100%; font-size:11px; border-collapse: collapse; }
+        td, th { padding: 8px 4px; border-bottom: 1px solid #222; text-align: left; }
+    </style>
+</head>
+<body>
+
+    <div id="auth-ui" style="max-width:400px; margin:50px auto;">
+        <div class="box">
+            <h3 style="text-align:center; color:var(--cyan)">ĐĂNG NHẬP HỆ THỐNG</h3>
+            <input type="text" id="au" placeholder="Username">
+            <input type="password" id="ap" placeholder="Password">
+            <div class="grid">
+                <button class="btn-main" onclick="auth('login')">ĐĂNG NHẬP</button>
+                <button style="background:#444; color:#fff" onclick="auth('reg')">ĐĂNG KÝ</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="shop-ui" style="display:none; max-width: 550px; margin: auto;">
+        
+        <div id="adm-box" class="adm-sec">
+            <div style="margin-bottom:10px">
+                <button class="tab-btn tab-active" onclick="tab(event,'a-u')">USER</button>
+                <button class="tab-btn" onclick="tab(event,'a-p')">NẠP</button>
+                <button class="tab-btn" onclick="tab(event,'a-k')">KEY</button>
+                <button class="tab-btn" onclick="tab(event,'a-s')">CÀI ĐẶT</button>
+            </div>
+            <div id="a-u" class="atab"><div id="list-u" style="max-height:200px; overflow-y:auto"></div></div>
+            <div id="a-p" class="atab" style="display:none"><div id="list-p"></div></div>
+            <div id="a-k" class="atab" style="display:none">
+                <select id="k-t"><option value="ngay">Ngày</option><option value="tuan">Tuần</option><option value="thang">Tháng</option><option value="nam">Năm</option></select>
+                <textarea id="k-l" rows="3" placeholder="List key (mỗi dòng 1 key)"></textarea>
+                <button class="btn-main" onclick="upK()">UP KEY</button>
+            </div>
+            <div id="a-s" class="atab" style="display:none">
+                <input type="text" id="s-n" placeholder="Tên Web">
+                <input type="number" id="s-pn" placeholder="Giá Ngày thường">
+                <input type="number" id="s-vn" placeholder="Giá Ngày VIP">
+                <button class="btn-main" onclick="saveS()">LƯU CÀI ĐẶT</button>
+            </div>
+        </div>
+
+        <div class="box" style="display:flex; justify-content:space-between; align-items:center">
+            <div><b id="u-n" style="color:var(--cyan)"></b> <span id="u-v"></span></div>
+            <div><b id="u-b" style="color:var(--gold)">0</b>đ</div>
+        </div>
+
+        <div class="box">
+            <div class="grid">
+                <button class="btn-main" onclick="buy('ngay')">GÓI NGÀY <span id="pr-ngay"></span> <br><small id="st-ngay">Kho: 0</small></button>
+                <button class="btn-main" onclick="buy('tuan')">GÓI TUẦN <span id="pr-tuan"></span> <br><small id="st-tuan">Kho: 0</small></button>
+                <button class="btn-main" onclick="buy('thang')">GÓI THÁNG <span id="pr-thang"></span> <br><small id="st-thang">Kho: 0</small></button>
+                <button class="btn-main" onclick="buy('nam')">GÓI NĂM <span id="pr-nam"></span> <br><small id="st-nam">Kho: 0</small></button>
+            </div>
+        </div>
+
+        <div class="box">
+            <h4>NẠP TIỀN</h4>
+            <p style="font-size:12px">MB: <b>0588807300000</b> - <b>CAO MINH DUY</b></p>
+            <p style="color:var(--cyan); font-size:12px">ND: <b id="n-nd"></b></p>
+            <input type="number" id="n-a" placeholder="Số tiền đã chuyển">
+            <button class="btn-gold" style="background:var(--gold); width:100%" onclick="sendN()">XÁC NHẬN ĐÃ CHUYỂN</button>
+        </div>
+
+        <div class="box">
+            <h4>LỊCH SỬ</h4>
+            <div style="max-height:150px; overflow-y:auto"><table id="h-l"></table></div>
+        </div>
+    </div>
+
+<script>
+    const firebaseConfig = { databaseURL: "https://shopmduy-default-rtdb.asia-southeast1.firebasedatabase.app" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    let curU, isV, isA, sets = {};
+
+    function auth(t) {
+        const u = document.getElementById('au').value.trim().toLowerCase(), p = document.getElementById('ap').value;
+        if(!u || !p) return;
+        db.ref('users/'+u).once('value', s => {
+            const d = s.val();
+            if(t === 'reg') {
+                if(d) return alert("Đã tồn tại");
+                db.ref('users/'+u).set({password:p, balance:0, role:'user', isVIP:false, isLocked:false});
+                alert("Xong");
+            } else {
+                if(d && d.password === p) {
+                    if(d.isLocked) return alert("Bị khóa");
+                    curU = u; isA = (d.role === 'admin');
+                    document.getElementById('auth-ui').style.display = 'none';
+                    document.getElementById('shop-ui').style.display = 'block';
+                    document.getElementById('u-n').innerText = u.toUpperCase();
+                    document.getElementById('n-nd').innerText = "NAP " + u.toUpperCase();
+                    if(isA) document.getElementById('adm-box').style.display = 'block';
+                    init();
+                } else alert("Sai");
+            }
+        });
+    }
+
+    function init() {
+        db.ref('users/'+curU).on('value', s => {
+            const d = s.val();
+            document.getElementById('u-b').innerText = (d.balance||0).toLocaleString();
+            document.getElementById('u-v').innerHTML = d.isVIP ? `<span style="color:var(--vip)">[VIP]</span>` : "";
+            isV = d.isVIP;
+        });
+        db.ref('system/settings').on('value', s => { sets = s.val() || {}; updateP(); });
+        ['ngay','tuan','thang','nam'].forEach(t => db.ref('key_store/'+t).on('value', s => document.getElementById('st-'+t).innerText = "Kho: " + s.numChildren()));
+        db.ref('history/'+curU).on('value', s => {
+            const l = document.getElementById('h-l'); l.innerHTML = "";
+            s.forEach(c => { const i = c.val(); l.innerHTML = `<tr><td>${i.t}</td><td>${i.m}</td><td style="color:var(--cyan)">${i.c}</td></tr>` + l.innerHTML; });
+        });
+        if(isA) loadA();
+    }
+
+    function buy(t) {
+        const p = isV ? (sets['v_'+t]||0) : (sets['p_'+t]||0);
+        db.ref('users/'+curU+'/balance').once('value', s => {
+            if((s.val()||0) < p) return alert("Hết tiền");
+            db.ref('key_store/'+t).limitToFirst(1).once('value', sk => {
+                if(!sk.exists()) return alert("Hết hàng");
+                const kid = Object.keys(sk.val())[0], kv = sk.val()[kid];
+                db.ref('users/'+curU+'/balance').transaction(b => b - p);
+                db.ref('key_store/'+t+'/'+kid).remove();
+                db.ref('history/'+curU).push({t:new Date().toLocaleTimeString(), m:-p, c:kv});
+                alert("KEY: " + kv);
+            });
+        });
+    }
+
+    function sendN() {
+        const a = document.getElementById('n-a').value;
+        if(a < 1000) return;
+        db.ref('pending').push({u:curU, a:Number(a), s:'Chờ'});
+        alert("Đã gửi");
+    }
+
+    function tab(e, n) {
+        document.querySelectorAll('.atab').forEach(x => x.style.display='none');
+        document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('tab-active'));
+        document.getElementById(n).style.display='block';
+        e.currentTarget.classList.add('tab-active');
+    }
+
+    function loadA() {
+        db.ref('pending').on('value', s => {
+            const d = document.getElementById('list-p'); d.innerHTML = "";
+            s.forEach(c => { const v = c.val(); d.innerHTML += `<div style="font-size:11px; margin-top:5px">${v.u}: ${v.a} <button onclick="appr('${c.key}','${v.u}',${v.a})">DUYỆT</button></div>`; });
+        });
+        db.ref('users').on('value', s => {
+            const d = document.getElementById('list-u'); d.innerHTML = "<table><tr><th>User</th><th>Ví</th><th>VIP</th><th>Lock</th></tr>";
+            s.forEach(c => { const u = c.val(); d.innerHTML += `<tr><td>${c.key}</td><td>${u.balance}</td><td><input type="checkbox" ${u.isVIP?'checked':''} onclick="db.ref('users/${c.key}/isVIP').set(this.checked)"></td><td><input type="checkbox" ${u.isLocked?'checked':''} onclick="db.ref('users/${c.key}/isLocked').set(this.checked)"></td></tr>`; });
+            d.innerHTML += "</table>";
+        });
+    }
+
+    function appr(id, u, a) {
+        db.ref('users/'+u+'/balance').transaction(b => (b||0)+a);
+        db.ref('pending/'+id).remove();
+    }
+
+    function upK() {
+        const t = document.getElementById('k-t').value, l = document.getElementById('k-l').value.split('\n');
+        l.forEach(k => { if(k.trim()) db.ref('key_store/'+t).push(k.trim()); });
+        document.getElementById('k-l').value = ""; alert("Xong");
+    }
+
+    function saveS() {
+        const d = { name: document.getElementById('s-n').value, p_ngay: Number(document.getElementById('s-pn').value), v_ngay: Number(document.getElementById('s-vn').value) };
+        db.ref('system/settings').update(d); alert("Lưu");
+    }
+
+    function updateP() {
+        const pre = isV ? 'v_' : 'p_';
+        ['ngay','tuan','thang','nam'].forEach(t => { if(document.getElementById('pr-'+t)) document.getElementById('pr-'+t).innerText = (sets[pre+t]||0).toLocaleString() + "đ"; });
+    }
+</script>
+</body>
+</html>
